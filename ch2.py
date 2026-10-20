@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def minimum_edit_distance_matrix(source, target):
     n = len(source)
     m = len(target)
@@ -22,8 +23,10 @@ def minimum_edit_distance_matrix(source, target):
 
     return D
 
+
 def minimum_edit_distance(D):
     return D[-1, -1]
+
 
 def alignment(source, target):
     ROW = 0
@@ -92,6 +95,7 @@ def alignment(source, target):
     print(source_line)
     print(target_line)
 
+
 def ex2_9():
     source1 = "DRIVE"
     target1 = "DIVERS"
@@ -111,9 +115,10 @@ def ex2_9():
     print(D2)
     print(f"{source2} -> {target2} \nD2 = {distance2}\n")
 
+
 def ex2_10():
-    source = "MICHAEL"
-    target = "CYANNA"
+    source = "INTENTION"
+    target = "EXECUTION"
 
     D = minimum_edit_distance_matrix(source, target)
     distance = minimum_edit_distance(D)
@@ -122,6 +127,7 @@ def ex2_10():
     print(f"{source} -> {target} \nD = {distance}\n")
 
     alignment(source, target)
+
 
 if __name__ == "__main__":
     ex2_9()
