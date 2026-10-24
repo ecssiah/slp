@@ -1,20 +1,20 @@
 import numpy as np
 
 
-def minimum_edit_distance_matrix(source, target):
-    n = len(source)
-    m = len(target)
+def minimum_edit_distance(source, target):
+    m = len(source)
+    n = len(target)
 
-    D = np.zeros((n + 1, m + 1))
+    D = np.zeros((m + 1, n + 1))
 
-    for i in range(1, n + 1):
+    for i in range(1, m + 1):
         D[i, 0] = D[i - 1, 0] + 1
     
-    for j in range(1, m + 1):
+    for j in range(1, n + 1):
         D[0, j] = D[0, j - 1] + 1
 
-    for i in range(1, n + 1):
-        for j in range(1, m + 1):
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
             row_cost = D[i - 1, j + 0] + 1
             col_cost = D[i + 0, j - 1] + 1
             swp_cost = D[i - 1, j - 1] + (0 if source[i - 1] == target[j - 1] else 2)
@@ -24,34 +24,30 @@ def minimum_edit_distance_matrix(source, target):
     return D
 
 
-def minimum_edit_distance(D):
-    return D[-1, -1]
-
-
-def alignment(source, target):
-    ROW = 0
-    COL = 1
+def calculate_alignment(source, target):
+    DEL = 0
+    INS = 1
     SWP = 2
 
-    n = len(source)
-    m = len(target)
+    m = len(source)
+    n = len(target)
 
-    D = np.zeros((n + 1, m + 1))
-    backlinks = np.empty((n + 1, m + 1), dtype=object)
+    D = np.zeros((m + 1, n + 1))
+    backlinks = np.empty((m + 1, n + 1), dtype=object)
 
     for i in np.ndindex(backlinks.shape):
         backlinks[i] = []
 
-    for i in range(1, n + 1):
+    for i in range(1, m + 1):
         D[i, 0] = D[i - 1, 0] + 1
-        backlinks[i - 1, 0].append(ROW)
+        backlinks[i - 1, 0].append(DEL)
     
-    for j in range(1, m + 1):
+    for j in range(1, n + 1):
         D[0, j] = D[0, j - 1] + 1
-        backlinks[0, j - 1].append(COL)
+        backlinks[0, j - 1].append(INS)
     
-    for i in range(1, n + 1):
-        for j in range(1, m + 1):
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
             row_value = D[i - 1, j + 0] + 1
             col_value = D[i + 0, j - 1] + 1
             swp_value = D[i - 1, j - 1] + (0 if source[i - 1] == target[j - 1] else 2)
@@ -62,73 +58,73 @@ def alignment(source, target):
                 backlinks[i, j].append(SWP)
 
             if row_value == min_cost:
-                backlinks[i, j].append(ROW)
+                backlinks[i, j].append(DEL)
 
             if col_value == min_cost:
-                backlinks[i, j].append(COL)
+                backlinks[i, j].append(INS)
 
             D[i, j] = min_cost
 
-    source_line = ""
-    target_line = ""
+    output = [[], []]
 
-    i = n
-    j = m
+    i = m
+    j = n
 
-    while i != 0 or j != 0:
+    while i > 0 or j > 0:
         backlink = backlinks[i, j][0]
 
         if backlink == SWP:
-            source_line = source[i - 1] + source_line
-            target_line = target[j - 1] + target_line
+            output[0].insert(0, source[i - 1])
+            output[1].insert(0, target[j - 1])
             i -= 1
             j -= 1
-        elif backlink == ROW:
-            source_line = source[i - 1] + source_line
-            target_line = "*"           + target_line
+        elif backlink == DEL:
+            output[0].insert(0, source[i - 1])
+            output[1].insert(0, "*")
             i -= 1
-        elif backlink == COL:
-            source_line = "*"           + source_line
-            target_line = target[j - 1] + target_line
+        elif backlink == INS:
+            output[0].insert(0, "*")
+            output[1].insert(0, target[j - 1])
             j -= 1
 
-    print(source_line)
-    print(target_line)
+    return output
 
 
 def ex2_9():
     source1 = "DRIVE"
     target1 = "DIVERS"
 
-    D1 = minimum_edit_distance_matrix(source1, target1)
-    distance1 = minimum_edit_distance(D1)
+    D1 = minimum_edit_distance(source1, target1)
 
-    print(D1)
-    print(f"{source1} -> {target1} \nD1 = {distance1}\n")
+    print(D1, "\n")
+    print(f"{source1} -> {target1} \nD1 = {D1[-1, -1]}\n")
 
     source2 = "DRIVE"
     target2 = "BRIEF"
 
-    D2 = minimum_edit_distance_matrix(source2, target2)
-    distance2 = minimum_edit_distance(D2)
+    D2 = minimum_edit_distance(source2, target2)
 
-    print(D2)
-    print(f"{source2} -> {target2} \nD2 = {distance2}\n")
+    print(D2, "\n")
+    print(f"{source2} -> {target2} \nD2 = {D2[-1, -1]}\n")
 
 
 def ex2_10():
     source = "INTENTION"
     target = "EXECUTION"
 
-    D = minimum_edit_distance_matrix(source, target)
-    distance = minimum_edit_distance(D)
+    D = minimum_edit_distance(source, target)
 
-    print(D)
-    print(f"{source} -> {target} \nD = {distance}\n")
+    print(D, "\n")
+    print(f"{source} -> {target} \nD = {D[-1, -1]}\n")
 
-    alignment(source, target)
+    alignment = calculate_alignment(source, target)
+
+    print("".join(alignment[0]))
+    print("".join(alignment[1]))
 
 
 if __name__ == "__main__":
+    print("Chapter 2\n")
+    
     ex2_9()
     ex2_10()
