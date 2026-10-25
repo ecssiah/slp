@@ -1,58 +1,24 @@
-import random
-import numpy as np
-import pandas as pd
-from collections import Counter
+from collections import defaultdict, Counter
 import nltk
+import numpy as np
+import random
+import re
+import pandas as pd
 
 
-def calculate_1gram(sents):
+def calculate_1gram(text):
     sentence_list = [
-        ["<s>"] + sentence + ["</s>"]
-        for sentence in sents
+        ["<s>"] + sentence.split(" ") + ["</s>"]
+        for sentence in text
     ]
 
     words = [word for sentence in sentence_list for word in sentence]
     vocab = set(words)
 
-    vocab_count = len(vocab)
     word_count = len(words)
-
     words_counter = Counter(words)
 
-    P = {}
-
-    for word in vocab:
-        P[word] = words_counter[word] / word_count
-
-    return P
-
-
-def calculate_2gram(sents):
-    sentence_list = [
-        ["<s>"] + sentence + ["</s>"]
-        for sentence in sents
-    ]
-
-    words = [word for sentence in sentence_list for word in sentence]
-    vocab = set(words)
-
-    vocab_count = len(vocab)
-    word_count = len(words)
-
-    words_counter = Counter(words)
-
-    bigram_list = []
-
-    for sentence in sentence_list:
-        for i in range(1, len(sentence)):
-            bigram_list.append((sentence[i - 1], sentence[i]))
-
-    bigram_list_counter = Counter(bigram_list)
-
-    P = {}
-
-    for bigram in bigram_list:
-        P[bigram] = bigram_list_counter[bigram] / words_counter[bigram[0]]
+    P = {word : words_counter[word] / word_count for word in vocab}
 
     return P
 
@@ -71,24 +37,58 @@ def random_1gram_sentence(P):
     return " ".join(sentence)
 
 
-def random_2gram_sentence(P):
-    P_initial = {k: v for k, v in P.items() if k[0] == "<s>"}
-
-    sentence = [
-        random.choices(list(P_initial.keys()), weights=list(P_initial.values()), k=1)[0][1]
+def calculate_2gram(text):
+    sentence_list = [
+        ["<s>"] + sentence.split(" ") + ["</s>"]
+        for sentence in text
     ]
 
+    words = [word for sentence in sentence_list for word in sentence]
+    words_counter = Counter(words)
+
+    bigram_list = []
+
+    for sentence in sentence_list:
+        for i in range(1, len(sentence)):
+            bigram_list.append((sentence[i - 1], sentence[i]))
+
+    bigram_list_counter = Counter(bigram_list)
+
+    P_flat = {
+        bigram : bigram_list_counter[bigram] / words_counter[bigram[0]] 
+        for bigram in set(bigram_list)
+    }
+
+    P = defaultdict(dict)
+
+    for (x, y), v in P_flat.items():
+        P[x][y] = v
+
+    return P
+
+
+def random_2gram_sentence(P):
+    word1 = "<s>"
+    word_list = []
+
     while True:
-        bigram = random.choices(list(P.keys()), weights=list(P.values()), k=1)[0]
+        P_word = P[word1]
 
-        if bigram[1] == "</s>":
-            sentence.append(bigram[0])
-            break
+        word2 = random.choices(
+            list(P_word.keys()), 
+            weights=list(P_word.values()), 
+            k=1
+        )[0]
+
+        if word2 != "</s>":
+            word_list.append(word2)
+            word1 = word2
         else:
-            sentence.append(bigram[0])
-            sentence.append(bigram[1])
+            break
 
-    return " ".join(sentence)
+    sentence = " ".join(word_list)
+
+    return sentence
 
 
 if __name__ == "__main__":
@@ -97,13 +97,13 @@ if __name__ == "__main__":
     nltk.download('punkt_tab')
     nltk.download("gutenberg")
 
-    sents = nltk.corpus.gutenberg.sents("bible-kjv.txt")
+    text_raw = nltk.corpus.gutenberg.raw("bible-kjv.txt")
 
-    P_1gram = calculate_1gram(sents)
-    P_2gram = calculate_2gram(sents)
+    text_clean = re.sub(r"\s+", " ", text_raw).strip()
+    text = re.split(r"\b\d+:\d+\s*", text_clean)
 
-    random_1gram = random_1gram_sentence(P_1gram)
-    random_2gram = random_2gram_sentence(P_2gram)
+    P_1 = calculate_1gram(text)
+    P_2 = calculate_2gram(text)
 
-    print(random_1gram)
-    print(random_2gram)
+    print(f"1gram sentence:\n{random_1gram_sentence(P_1)}\n")
+    print(f"2gram sentence:\n{random_2gram_sentence(P_2)}\n")
